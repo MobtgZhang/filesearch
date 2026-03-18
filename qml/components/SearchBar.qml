@@ -1,16 +1,31 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
+import QtQuick.Dialogs
 import "../theme" 1.0
 
 Rectangle {
     id: searchBar
     Layout.fillWidth: true
     Layout.preferredHeight: Theme.searchBarHeight
-    clip: true
+    clip: false  // 允许 Pop 菜单溢出显示
     color: Theme.panel
     border.color: Theme.border
     border.width: 1
+
+    FolderDialog {
+        id: folderDialog
+        title: "选择查找目录"
+        acceptLabel: "选择"
+        rejectLabel: "取消"
+        onAccepted: {
+            var path = selectedFolder.toString()
+            if (path.startsWith("file://"))
+                path = path.substring(7)
+            dirFilterMenu.customSelection = path
+            dirFilterMenu.currentIndex = 2
+        }
+    }
 
     RowLayout {
         anchors.fill: parent
@@ -28,11 +43,11 @@ Rectangle {
             Layout.alignment: Qt.AlignVCenter
         }
 
-        // 搜索输入框
+        // 搜索输入框 + 查找按钮
         Rectangle {
             Layout.fillWidth: true
             Layout.minimumWidth: 120
-            Layout.preferredHeight: 32
+            Layout.preferredHeight: 34
             Layout.alignment: Qt.AlignVCenter
             radius: 8
             clip: true
@@ -43,10 +58,10 @@ Rectangle {
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 12
-                anchors.rightMargin: 12
-                anchors.topMargin: 6
-                anchors.bottomMargin: 6
-                spacing: 10
+                anchors.rightMargin: 4
+                anchors.topMargin: 4
+                anchors.bottomMargin: 4
+                spacing: 8
 
                 TextField {
                     id: searchInput
@@ -60,8 +75,8 @@ Rectangle {
                     color: Theme.bright
                     background: Item {}
                     verticalAlignment: TextInput.AlignVCenter
-                    topPadding: 3
-                    bottomPadding: 3
+                    topPadding: 4
+                    bottomPadding: 4
                     leftPadding: 4
                     rightPadding: 4
                 }
@@ -73,58 +88,82 @@ Rectangle {
                     text: "— 找到 23 个结果，共 48.6 GB"
                     Layout.alignment: Qt.AlignVCenter
                 }
-            }
-        }
 
-        // 筛选标签
-        Row {
-            spacing: 6
-            Layout.alignment: Qt.AlignVCenter
-            FilterChip { label: "📁 类型: 视频"; chipColor: Theme.accent2 }
-            FilterChip { label: "⬆ 大小 >500MB"; chipColor: Theme.accent3 }
-            FilterChip { label: "🕐 最近 90 天"; chipColor: Theme.accent4 }
-        }
-
-        // AI 按钮
-        Rectangle {
-            Layout.preferredWidth: 100
-            Layout.preferredHeight: 32
-            Layout.alignment: Qt.AlignVCenter
-            radius: 8
-            gradient: Gradient {
-                GradientStop { position: 0; color: Qt.rgba(74/255, 240/255, 180/255, 0.15) }
-                GradientStop { position: 1; color: Qt.rgba(123/255, 111/255, 240/255, 0.15) }
-            }
-            border.color: Qt.rgba(74/255, 240/255, 180/255, 0.35)
-            border.width: 1
-
-            RowLayout {
-                anchors.centerIn: parent
-                spacing: 6
-
+                // 查找按钮
                 Rectangle {
-                    width: 7
-                    height: 7
-                    radius: 4
-                    color: Theme.accent
-                    opacity: 0.8
-                }
+                    Layout.preferredWidth: 72
+                    Layout.preferredHeight: 26
+                    Layout.alignment: Qt.AlignVCenter
+                    radius: 6
+                    color: searchBtnMa.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15)
+                    border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.4)
+                    border.width: 1
 
-                Text {
-                    font.pixelSize: 12
-                    font.weight: Font.DemiBold
-                    font.letterSpacing: 0.05
-                    color: Theme.accent
-                    text: "AI 助手"
+                    Text {
+                        anchors.centerIn: parent
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: Theme.accent
+                        text: "查找"
+                    }
+
+                    MouseArea {
+                        id: searchBtnMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: { /* 执行搜索 */ }
+                    }
+                }
+            }
+        }
+
+        // 筛选 Pop 菜单：查找目录、类型、大小、最近 XX 天
+        Row {
+            spacing: 8
+            Layout.alignment: Qt.AlignVCenter
+
+            FilterPopMenu {
+                id: dirFilterMenu
+                label: "📁 查找目录"
+                chipColor: Theme.accent
+                model: ["全部磁盘", "当前目录", "选择目录...", "桌面", "文档", "下载"]
+                currentIndex: 0
+                onItemClicked: function(idx, text) {
+                    if (text === "选择目录...") {
+                        folderDialog.open()
+                        return true
+                    }
+                    return false
+                }
+                onSelected: function(idx) {
+                    if (idx !== 2)
+                        dirFilterMenu.customSelection = ""
+                    /* 更新搜索目录 */
                 }
             }
 
-            MouseArea {
-                anchors.fill: parent
-                hoverEnabled: true
-                onEntered: parent.opacity = 0.9
-                onExited: parent.opacity = 1
-                onClicked: { /* 打开 AI 面板 */ }
+            FilterPopMenu {
+                label: "类型"
+                chipColor: Theme.accent2
+                model: ["全部", "视频", "文档", "图片", "音频", "压缩包", "可执行文件"]
+                currentIndex: 1
+                onSelected: function(idx) { /* 更新类型筛选 */ }
+            }
+
+            FilterPopMenu {
+                label: "大小"
+                chipColor: Theme.accent3
+                model: ["全部", "> 100 MB", "> 500 MB", "> 1 GB", "> 10 GB", "< 1 MB"]
+                currentIndex: 2
+                onSelected: function(idx) { /* 更新大小筛选 */ }
+            }
+
+            FilterPopMenu {
+                label: "最近"
+                chipColor: Theme.accent4
+                model: ["全部", "7 天", "30 天", "90 天", "1 年"]
+                currentIndex: 3
+                onSelected: function(idx) { /* 更新时间筛选 */ }
             }
         }
     }

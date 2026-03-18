@@ -24,6 +24,8 @@ FileSearch/
 │       └── FileOperationService
 ├── qml/
 │   ├── main.qml              # 主窗口
+│   ├── ai-chat/
+│   │   └── index.html        # AI 聊天面板 Web UI（由 WebEngineView 加载）
 │   ├── theme/
 │   │   ├── Theme.qml          # 主题色彩/字体
 │   │   └── qmldir
@@ -85,8 +87,9 @@ make
 
 ## 依赖
 
-- Qt 6.x（Core, Gui, Quick, QuickControls2, Qml）
+- Qt 6.x（Core, Gui, Quick, QuickControls2, Qml, **WebEngineQuick**）
 - Qt 安装路径：`/home/mobtgzhang/Qt/6.10.2/gcc_64`（可在 CMakeLists.txt 中修改 CMAKE_PREFIX_PATH）
+- 右侧 AI 聊天面板使用 Qt WebEngine 渲染 `qml/ai-chat/index.html`，聊天 UI 由 Web 技术实现
 
 ## 主题
 

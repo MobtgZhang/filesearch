@@ -3,6 +3,7 @@
 #include <QQmlContext>
 #include <QDir>
 #include <QUrl>
+#include <QtWebEngineQuick>
 
 #include "AppSettings.h"
 #include "model/FileItemModel.h"
@@ -11,6 +12,7 @@
 
 int main(int argc, char *argv[])
 {
+    QtWebEngineQuick::initialize();
     QGuiApplication app(argc, argv);
 
     AppSettings appSettings;
@@ -68,6 +70,12 @@ int main(int argc, char *argv[])
     } else {
         engine.addImportPath("qrc:/");
     }
+
+    // 供 AI 聊天面板加载 HTML 的路径
+    QString aiChatHtmlPath = qmlBasePath.isEmpty()
+        ? QString()
+        : QDir(qmlBasePath).absoluteFilePath("ai-chat/index.html");
+    engine.rootContext()->setContextProperty("aiChatHtmlPath", aiChatHtmlPath);
 
     // 加载 main.qml
     QUrl url;

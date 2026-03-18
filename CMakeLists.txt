@@ -13,6 +13,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     Quick
     QuickControls2
     Qml
+    WebEngineQuick
+    QuickDialogs2
 )
 
 # 源文件
@@ -57,4 +59,6 @@ target_link_libraries(FileSearch PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Qt6::Qml
+    Qt6::WebEngineQuick
+    Qt6::QuickDialogs2
 )

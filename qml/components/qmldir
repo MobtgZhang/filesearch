@@ -2,6 +2,7 @@ module components
 TitleBar 1.0 TitleBar.qml
 SearchBar 1.0 SearchBar.qml
 FilterChip 1.0 FilterChip.qml
+FilterPopMenu 1.0 FilterPopMenu.qml
 Sidebar 1.0 Sidebar.qml
 NavIcon 1.0 NavIcon.qml
 VizPanel 1.0 VizPanel.qml

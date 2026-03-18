@@ -10,22 +10,22 @@ Rectangle {
     width: 70
     height: 32
     radius: 6
-    color: active ? Theme.accent : "transparent"
-    border.color: active ? Theme.accent : Theme.border
+    color: Theme.panel
+    border.color: Theme.border
     border.width: 1
 
     Text {
         anchors.centerIn: parent
         font.pixelSize: 12
-        color: active ? (Theme._mode === "dark" ? "#0a0c10" : "#ffffff") : Theme.text
+        color: Theme.text
         text: btn.label
     }
 
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        onEntered: if (!active) btn.color = Theme.border
-        onExited: if (!active) btn.color = "transparent"
+        onEntered: btn.color = Qt.lighter(Theme.panel, 1.1)
+        onExited: btn.color = Theme.panel
         onClicked: btn.clicked()
     }
 
