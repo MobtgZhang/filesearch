@@ -2,13 +2,24 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QDir>
+#include <QTimer>
 #include <QUrl>
 #include <QtWebEngineQuick>
+#include <QtConcurrent>
+#include <QFutureWatcher>
 
 #include "AppSettings.h"
+#include "PathProvider.h"
+#include "StatusContext.h"
 #include "model/FileItemModel.h"
 #include "model/UnifiedFileRecord.h"
 #include "engine/SearchEngine.h"
+#include "engine/ScanEngine.h"
+#include "engine/DuplicateEngine.h"
+#include "engine/CleanupEngine.h"
+#include "service/FileOperationService.h"
+#include "agent/ChatBridge.h"
+#include "agent/ToolExecutor.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,35 +27,82 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
     AppSettings appSettings;
+    PathProvider pathProvider;
+    StatusContext statusContext;
     FileItemModel fileModel;
     SearchEngine searchEngine;
-
-    // 填充演示数据
-    QList<UnifiedFileRecord> demoFiles;
-    auto addDemo = [&](const QString &name, const QString &path, const QString &ext, qint64 size, const QString &date) {
-        UnifiedFileRecord r;
-        r.name = name;
-        r.path = path;
-        r.extension = ext;
-        r.size = size;
-        r.modified = QDateTime::fromString(date, "yyyy-MM-dd");
-        r.isDirectory = false;
-        demoFiles.append(r);
-    };
-    addDemo("Interstellar.4K.mkv", "~/Movies/Sci-Fi/", "mkv", 45400000000ULL, "2024-11-03");
-    addDemo("Dune.Part2.2160p.mkv", "~/Movies/2024/", "mkv", 41500000000ULL, "2024-12-15");
-    addDemo("Ubuntu-24.04-desktop.iso", "~/Downloads/", "iso", 6550000000ULL, "2024-09-22");
-    addDemo("Avatar.WoW.Extended.mkv", "~/Movies/Sci-Fi/", "mkv", 6200000000ULL, "2025-01-08");
-    addDemo("project-backup-2023.tar.gz", "~/Backups/annual/", "tar.gz", 4500000000ULL, "2023-12-31");
-    addDemo("GoPro_footage_raw.mp4", "~/Videos/Travel/2024/", "mp4", 4200000000ULL, "2024-08-14");
-    addDemo("wedding-raw-edit-v3.mov", "~/Videos/Events/", "mov", 3650000000ULL, "2024-06-20");
-    addDemo("vm-windows11.vmdk", "~/VirtualMachines/", "vmdk", 2900000000ULL, "2024-03-05");
-    fileModel.setFiles(demoFiles);
+    ScanEngine scanEngine;
+    DuplicateEngine duplicateEngine;
+    CleanupEngine cleanupEngine;
+    FileOperationService fileOperationService;
+    ChatBridge chatBridge;
+    ToolExecutor toolExecutor;
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("appSettings", &appSettings);
+    engine.rootContext()->setContextProperty("pathProvider", &pathProvider);
+    engine.rootContext()->setContextProperty("statusContext", &statusContext);
     engine.rootContext()->setContextProperty("fileModel", &fileModel);
     engine.rootContext()->setContextProperty("searchEngine", &searchEngine);
+    engine.rootContext()->setContextProperty("scanEngine", &scanEngine);
+    engine.rootContext()->setContextProperty("duplicateEngine", &duplicateEngine);
+    engine.rootContext()->setContextProperty("cleanupEngine", &cleanupEngine);
+    engine.rootContext()->setContextProperty("fileOperationService", &fileOperationService);
+    engine.rootContext()->setContextProperty("chatBridge", &chatBridge);
+    engine.rootContext()->setContextProperty("toolExecutor", &toolExecutor);
+
+    toolExecutor.setSearchEngine(&searchEngine);
+    toolExecutor.setFileOperationService(&fileOperationService);
+    toolExecutor.setAppSettings(&appSettings);
+
+    QObject::connect(&searchEngine, &SearchEngine::resultsReady, &fileModel, [&fileModel](const QList<UnifiedFileRecord> &files) {
+        fileModel.setFiles(files);
+    });
+    QObject::connect(&searchEngine, &SearchEngine::searchStats, &statusContext, [&statusContext](int count, qint64 totalSize, qint64 ms) {
+        statusContext.setFoundFileCount(count);
+        statusContext.setFoundTotalSize(totalSize);
+        statusContext.setOperationTimeMs(static_cast<int>(ms));
+    });
+
+    // 限制文件列表大小，避免扫描完成后 setBaseFiles+query 阻塞主线程导致点击卡顿
+    QObject::connect(&scanEngine, &ScanEngine::segmentsReady, &app, [&app, &searchEngine, &fileModel](const QVariantMap &result) {
+        QVariantList list = result["fileList"].toList();
+        if (list.isEmpty()) {
+            QTimer::singleShot(0, &app, [&searchEngine]() {
+                searchEngine.setBaseFiles(QList<UnifiedFileRecord>());
+                searchEngine.query("");
+            });
+            return;
+        }
+        const int cap = qMin(list.size(), 15000);
+        auto convert = [list, cap]() -> QList<UnifiedFileRecord> {
+            QList<UnifiedFileRecord> records;
+            records.reserve(cap);
+            for (int i = 0; i < cap; i++) {
+                QVariantMap m = list[i].toMap();
+                UnifiedFileRecord r;
+                r.path = m["path"].toString();
+                r.name = m["name"].toString();
+                r.size = m["size"].toLongLong();
+                r.modified = QDateTime::fromString(m["modified"].toString(), Qt::ISODate);
+                r.extension = m["extension"].toString();
+                r.isDirectory = m["isDirectory"].toBool();
+                records.append(r);
+            }
+            return records;
+        };
+        auto *watcher = new QFutureWatcher<QList<UnifiedFileRecord>>(&app);
+        QObject::connect(watcher, &QFutureWatcher<QList<UnifiedFileRecord>>::finished, &app, [watcher, &searchEngine]() {
+            QList<UnifiedFileRecord> records = watcher->result();
+            watcher->deleteLater();
+            // 延迟到下一事件循环，避免阻塞主线程导致点击无响应
+            QTimer::singleShot(0, qApp, [records, &searchEngine]() {
+                searchEngine.setBaseFiles(records);
+                searchEngine.query("");
+            });
+        });
+        watcher->setFuture(QtConcurrent::run(convert));
+    });
 
     // 添加 QML 导入路径
     QDir appDir(QCoreApplication::applicationDirPath());

@@ -2,6 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import QtWebEngine
+import QtWebChannel
 import "../theme" 1.0
 
 Rectangle {
@@ -13,9 +14,10 @@ Rectangle {
     border.width: 1
 
     function applyThemeToWeb() {
-        if (!webLoader.item) return
+        var wv = webLoader.item && webLoader.item.children && webLoader.item.children[0]
+        if (!wv) return
         var mode = (typeof appSettings !== "undefined" && appSettings) ? appSettings.themeMode : "dark"
-        webLoader.item.runJavaScript(
+        wv.runJavaScript(
             "(function(){ setTimeout(function(){ var d=document.documentElement; if(d) d.setAttribute('data-theme','" + mode + "'); }, 0); })()"
         )
     }
@@ -31,18 +33,44 @@ Rectangle {
         active: typeof aiChatHtmlPath !== "undefined" && aiChatHtmlPath !== ""
 
         sourceComponent: Component {
-            WebEngineView {
-                id: webView
+            Item {
                 anchors.fill: parent
-                property string _theme: (typeof appSettings !== "undefined" && appSettings) ? appSettings.themeMode : "dark"
-                url: "file://" + aiChatHtmlPath + "?theme=" + _theme
-                backgroundColor: Theme.surface
-                onLoadProgressChanged: function(progress) {
+                QtObject {
+                    id: channelBridge
+                    WebChannel.id: "chatBridge"
+                    function addUserMessage(text) {
+                        if (typeof chatBridge !== "undefined" && chatBridge)
+                            chatBridge.addUserMessage(text)
+                    }
+                    function addAiMessage(text) {
+                        if (typeof chatBridge !== "undefined" && chatBridge)
+                            chatBridge.addAiMessage(text)
+                    }
+                    function addToolExecution(name, status, result) {
+                        if (typeof chatBridge !== "undefined" && chatBridge)
+                            chatBridge.addToolExecution(name, status, result)
+                    }
+                }
+                WebEngineView {
+                    id: webView
+                    anchors.fill: parent
+                    property string _theme: (typeof appSettings !== "undefined" && appSettings) ? appSettings.themeMode : "dark"
+                    url: "file://" + aiChatHtmlPath + "?theme=" + _theme
+                    backgroundColor: Theme.surface
+                    webChannel.registeredObjects: [channelBridge]
+                    userScripts.collection: [{
+                        name: "qtwebchanneljs",
+                        sourceUrl: "qrc:/qtwebchannel/qwebchannel.js",
+                        injectionPoint: WebEngineScript.DocumentCreation,
+                        worldId: WebEngineScript.MainWorld
+                    }]
+                    onLoadProgressChanged: function(progress) {
                     if (progress === 100) {
                         aiPanel.applyThemeToWeb()
                         // 延迟再执行一次，确保 DOM 完全就绪（解决首次打开主题不同步）
                         themeSyncTimer.restart()
                     }
+                }
                 }
             }
         }

@@ -6,6 +6,7 @@ Rectangle {
     id: tab
     property string label: ""
     property bool active: false
+    signal clicked()
 
     width: label.length * 10 + 16
     height: 22
@@ -21,6 +22,6 @@ Rectangle {
 
     MouseArea {
         anchors.fill: parent
-        onClicked: tab.active = true
+        onClicked: tab.clicked()
     }
 }

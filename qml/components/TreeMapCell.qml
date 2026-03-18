@@ -15,6 +15,12 @@ Rectangle {
         GradientStop { position: 1; color: cell.gradientColors[1] }
     }
 
+    Rectangle {
+        anchors.fill: parent
+        color: Qt.rgba(0, 0, 0, 0.15)
+        radius: parent.radius
+    }
+
     Column {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
@@ -42,8 +48,8 @@ Rectangle {
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        onEntered: parent.opacity = 0.9
-        onExited: parent.opacity = 1
+        onEntered: cell.opacity = 0.9
+        onExited: cell.opacity = 1
         onClicked: { /* 联动文件列表 */ }
     }
 }

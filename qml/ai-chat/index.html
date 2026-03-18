@@ -74,11 +74,66 @@
     flex-shrink: 0;
   }
   .ai-name { font-size: 13px; font-weight: 700; color: var(--bright); }
-  .ai-model {
+  .ai-model-trigger {
     font-family: 'JetBrains Mono', monospace;
     font-size: 9px;
     color: var(--muted);
     margin-left: auto;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(74,240,180,0.08);
+    border: 1px solid rgba(74,240,180,0.2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+  }
+  .ai-model-trigger:hover {
+    background: rgba(74,240,180,0.12);
+    border-color: rgba(74,240,180,0.35);
+    color: var(--accent);
+  }
+  .ai-model-trigger .arrow { font-size: 8px; opacity: 0.8; }
+  .ai-model-popover {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 6px;
+    min-width: 160px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    padding: 6px;
+    z-index: 1000;
+    display: none;
+  }
+  .ai-model-popover.open { display: block; animation: popFade 0.15s ease; }
+  @keyframes popFade {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .ai-model-option {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .ai-model-option:hover {
+    background: rgba(74,240,180,0.1);
+    color: var(--accent);
+  }
+  .ai-model-option.selected {
+    background: rgba(74,240,180,0.15);
+    color: var(--accent);
+  }
+  .ai-model-option.selected::after {
+    content: ' ✓';
+    font-weight: 600;
   }
   .ai-status-row { display: flex; align-items: center; gap: 6px; }
   .ai-status-dot {
@@ -229,22 +284,22 @@
   .tool-check { color: var(--accent); }
 
   .ai-input-wrap {
-    padding: 12px 16px 16px;
+    padding: 16px 20px 20px;
     border-top: 1px solid var(--border);
     flex-shrink: 0;
   }
   .ai-input-box {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 14px;
-    font-size: 13px;
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-size: 14px;
     font-family: 'Syne', sans-serif;
     color: var(--bright);
     display: flex;
     align-items: flex-end;
-    gap: 10px;
-    min-height: 52px;
+    gap: 12px;
+    min-height: 80px;
     cursor: text;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
@@ -254,30 +309,32 @@
   }
   .ai-input-area {
     flex: 1;
-    min-height: 24px;
+    min-height: 48px;
     outline: none;
     resize: none;
     border: none;
     background: transparent;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--bright);
-    line-height: 1.5;
+    line-height: 1.6;
   }
   .ai-input-area::placeholder {
     color: var(--muted);
   }
   .ai-send-btn {
-    width: 32px; height: 32px; border-radius: 8px;
+    width: 40px; height: 40px; border-radius: 10px;
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px;
     cursor: pointer;
     flex-shrink: 0;
     align-self: flex-end;
     color: white;
     border: none;
     transition: transform 0.15s, opacity 0.2s;
+  }
+  .ai-send-btn svg {
+    width: 18px; height: 18px;
   }
   .ai-send-btn:hover { opacity: 0.95; transform: scale(1.02); }
   .ai-send-btn:active { transform: scale(0.98); }
@@ -288,7 +345,20 @@
     <div class="ai-title-row">
       <div class="ai-avatar">✦</div>
       <span class="ai-name">NexFile AI</span>
-      <span class="ai-model">claude-sonnet</span>
+      <div class="ai-model-wrap" style="position:relative; margin-left:auto;">
+        <div class="ai-model-trigger" id="modelTrigger" title="点击切换模型">
+          <span id="modelDisplay">claude-sonnet</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="ai-model-popover" id="modelPopover">
+          <div class="ai-model-option" data-model="claude-sonnet-4-20250514">claude-sonnet-4</div>
+          <div class="ai-model-option" data-model="claude-sonnet">claude-sonnet</div>
+          <div class="ai-model-option" data-model="claude-opus-4">claude-opus-4</div>
+          <div class="ai-model-option" data-model="claude-3-5-haiku">claude-3-5-haiku</div>
+          <div class="ai-model-option" data-model="gpt-4o">gpt-4o</div>
+          <div class="ai-model-option" data-model="gpt-4o-mini">gpt-4o-mini</div>
+        </div>
+      </div>
     </div>
     <div class="ai-status-row">
       <div class="ai-status-dot"></div>
@@ -359,22 +429,72 @@
   <div class="ai-input-wrap">
     <div class="ai-input-box">
       <textarea class="ai-input-area" placeholder="输入指令，例如：找出重复文件…" rows="1"></textarea>
-      <button class="ai-send-btn" type="button">↑</button>
+      <button class="ai-send-btn" type="button" title="发送">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m22 2-7 20-4-9-9-4Z"/>
+          <path d="M22 2 11 13"/>
+        </svg>
+      </button>
     </div>
   </div>
 
   <script>
+    // QWebChannel 由 userScripts 在 DocumentCreation 时注入
+    var chatBridge = null;
+    if (typeof qt !== 'undefined' && qt.webChannelTransport) {
+      new QWebChannel(qt.webChannelTransport, function(channel) {
+        chatBridge = channel.objects.chatBridge;
+      });
+    }
+
+    // 模型选择器
+    (function() {
+      var STORAGE_KEY = 'nexfile_ai_model';
+      var MODELS = ['claude-sonnet-4-20250514','claude-sonnet','claude-opus-4','claude-3-5-haiku','gpt-4o','gpt-4o-mini'];
+      var DISPLAY_NAMES = {'claude-sonnet-4-20250514':'claude-sonnet-4','claude-sonnet':'claude-sonnet','claude-opus-4':'claude-opus-4','claude-3-5-haiku':'claude-3-5-haiku','gpt-4o':'gpt-4o','gpt-4o-mini':'gpt-4o-mini'};
+      function getStored() { try { return localStorage.getItem(STORAGE_KEY) || 'claude-sonnet'; } catch(e) { return 'claude-sonnet'; } }
+      function setStored(v) { try { localStorage.setItem(STORAGE_KEY, v); } catch(e) {} }
+      var trigger = document.getElementById('modelTrigger');
+      var popover = document.getElementById('modelPopover');
+      var display = document.getElementById('modelDisplay');
+      if (!trigger || !popover || !display) return;
+      function updateUI() {
+        var m = getStored();
+        display.textContent = DISPLAY_NAMES[m] || m;
+        document.querySelectorAll('.ai-model-option').forEach(function(el) {
+          el.classList.toggle('selected', el.dataset.model === m);
+        });
+      }
+      trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        popover.classList.toggle('open');
+      });
+      document.addEventListener('click', function() { popover.classList.remove('open'); });
+      popover.addEventListener('click', function(e) { e.stopPropagation(); });
+      popover.querySelectorAll('.ai-model-option').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var m = this.dataset.model;
+          setStored(m);
+          updateUI();
+          popover.classList.remove('open');
+        });
+      });
+      updateUI();
+    })();
+
     // Auto-resize textarea
     const textarea = document.querySelector('.ai-input-area');
     const sendBtn = document.querySelector('.ai-send-btn');
     textarea.addEventListener('input', function() {
       this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+      this.style.height = Math.min(this.scrollHeight, 200) + 'px';
     });
     sendBtn.addEventListener('click', function() {
       const text = textarea.value.trim();
       if (text) {
-        console.log('Send:', text);
+        if (chatBridge && typeof chatBridge.addUserMessage === 'function') {
+          chatBridge.addUserMessage(text);
+        }
         textarea.value = '';
         textarea.style.height = 'auto';
       }

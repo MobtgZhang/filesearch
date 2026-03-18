@@ -22,8 +22,10 @@ Rectangle {
             var path = selectedFolder.toString()
             if (path.startsWith("file://"))
                 path = path.substring(7)
+            AppController.searchDirectoryCustom = path
+            AppController.searchDirectoryIndex = 4
             dirFilterMenu.customSelection = path
-            dirFilterMenu.currentIndex = 2
+            dirFilterMenu.currentIndex = 4
         }
     }
 
@@ -79,6 +81,14 @@ Rectangle {
                     bottomPadding: 4
                     leftPadding: 4
                     rightPadding: 4
+                    onTextChanged: {
+                        if (typeof searchEngine !== "undefined" && searchEngine)
+                            searchEngine.query(text)
+                    }
+                    Component.onCompleted: {
+                        if (typeof searchEngine !== "undefined" && searchEngine)
+                            searchEngine.query("")
+                    }
                 }
 
                 Rectangle {
@@ -104,7 +114,7 @@ Rectangle {
                     leftPadding: 4
                     rightPadding: 4
                     selectByMouse: true
-                    placeholderText: "搜索目录"
+                    placeholderText: "主目录"
                     onEditingFinished: {
                         var val = text.trim()
                         if (val.length > 0) {
@@ -118,12 +128,18 @@ Rectangle {
                     target: dirField
                     property: "text"
                     value: {
-                        if (dirFilterMenu.customSelection.length > 0)
-                            return dirFilterMenu.customSelection
-                        var idx = dirFilterMenu.currentIndex
-                        if (idx >= 0 && idx < dirFilterMenu.model.length)
-                            return dirFilterMenu.model[idx]
-                        return "全部磁盘"
+                        if (AppController.searchDirectoryCustom.length > 0)
+                            return AppController.searchDirectoryCustom
+                        var idx = AppController.searchDirectoryIndex
+                        if (idx === 0 && typeof pathProvider !== "undefined" && pathProvider)
+                            return pathProvider.homePath
+                        if (idx === 1 && typeof pathProvider !== "undefined" && pathProvider)
+                            return pathProvider.desktopPath
+                        if (idx === 2 && typeof pathProvider !== "undefined" && pathProvider)
+                            return pathProvider.documentsPath
+                        if (idx === 3 && typeof pathProvider !== "undefined" && pathProvider)
+                            return pathProvider.downloadPath
+                        return "主目录"
                     }
                     when: !dirField.activeFocus
                 }
@@ -139,8 +155,8 @@ Rectangle {
                 id: dirFilterMenu
                 label: "📁 查找目录"
                 chipColor: Theme.accent
-                model: ["全部磁盘", "当前目录", "选择目录...", "桌面", "文档", "下载"]
-                currentIndex: 0
+                model: ["主目录", "桌面", "文档", "下载", "选择目录..."]
+                currentIndex: AppController.searchDirectoryIndex
                 onItemClicked: function(idx, text) {
                     if (text === "选择目录...") {
                         folderDialog.open()
@@ -149,10 +165,23 @@ Rectangle {
                     return false
                 }
                 onSelected: function(idx) {
-                    if (idx !== 2)
+                    if (idx !== 4) {
+                        AppController.searchDirectoryCustom = ""
                         dirFilterMenu.customSelection = ""
-                    /* 更新搜索目录 */
+                    }
+                    AppController.searchDirectoryIndex = idx
                 }
+            }
+
+            Binding {
+                target: dirFilterMenu
+                property: "currentIndex"
+                value: AppController.searchDirectoryIndex
+            }
+            Binding {
+                target: dirFilterMenu
+                property: "customSelection"
+                value: AppController.searchDirectoryCustom
             }
 
             FilterPopMenu {

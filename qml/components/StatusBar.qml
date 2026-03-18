@@ -13,6 +13,26 @@ Rectangle {
     border.color: Theme.border
     border.width: 1
 
+    function formatNumber(n) {
+        if (n >= 1000000)
+            return (n / 1000000).toFixed(1) + "M"
+        if (n >= 1000)
+            return (n / 1000).toFixed(1) + "K"
+        return n.toString()
+    }
+
+    function formatSize(bytes) {
+        if (bytes >= 1024 * 1024 * 1024 * 1024)
+            return (bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1) + " TB"
+        if (bytes >= 1024 * 1024 * 1024)
+            return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB"
+        if (bytes >= 1024 * 1024)
+            return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+        if (bytes >= 1024)
+            return (bytes / 1024).toFixed(1) + " KB"
+        return bytes + " B"
+    }
+
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: 12
@@ -24,7 +44,8 @@ Rectangle {
         StatusItem {
             dot: true
             text: "已索引 "
-            accentText: "1,284,392"
+            accentText: typeof statusContext !== "undefined" && statusContext
+                ? formatNumber(statusContext.indexedFileCount) : "0"
             suffix: " 个文件"
             Layout.alignment: Qt.AlignVCenter
         }
@@ -58,22 +79,23 @@ Rectangle {
         }
 
         StatusItem {
-            text: "搜索耗时 "
-            accentText: "12ms"
+            text: "耗时 "
+            accentText: typeof statusContext !== "undefined" && statusContext
+                ? statusContext.operationTimeFormatted : "0 毫秒"
+            suffix: ""
             Layout.alignment: Qt.AlignVCenter
         }
 
         StatusItem {
             text: "找到 "
-            accentText: "23"
-            suffix: " 个结果，共 48.6 GB"
-            Layout.alignment: Qt.AlignVCenter
-        }
-
-        StatusItem {
-            text: "磁盘已用 "
-            accentText: "847 GB / 1 TB"
-            warn: true
+            accentText: {
+                if (typeof statusContext === "undefined" || !statusContext) return "0"
+                var n = statusContext.foundFileCount
+                var sz = statusContext.foundTotalSize
+                var szStr = formatSize(sz)
+                return n + " 个文件，共 " + szStr
+            }
+            suffix: ""
             Layout.alignment: Qt.AlignVCenter
         }
 

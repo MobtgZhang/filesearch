@@ -19,6 +19,9 @@ QtObject {
     readonly property color _darkText:     "#c8d4e8"
     readonly property color _darkMuted:    "#4a5568"
     readonly property color _darkBright:   "#e8f0ff"
+    readonly property color _darkInput:    "#1c1c1f"
+    readonly property color _darkPopupBg:  "#111113"
+    readonly property color _darkHighlight:"#252528"
 
     // Light 模式色彩
     readonly property color _lightBg:       "#f5f6f8"
@@ -32,6 +35,9 @@ QtObject {
     readonly property color _lightText:     "#374151"
     readonly property color _lightMuted:    "#6b7280"
     readonly property color _lightBright:   "#111827"
+    readonly property color _lightInput:    "#ffffff"
+    readonly property color _lightPopupBg:  "#ffffff"
+    readonly property color _lightHighlight:"#e8e8ec"
 
     // 动态色彩（根据主题切换）
     readonly property color bg:       _mode === "light" ? _lightBg : _darkBg
@@ -45,6 +51,12 @@ QtObject {
     readonly property color text:     _mode === "light" ? _lightText : _darkText
     readonly property color muted:    _mode === "light" ? _lightMuted : _darkMuted
     readonly property color bright:   _mode === "light" ? _lightBright : _darkBright
+    readonly property color input:    _mode === "light" ? _lightInput : _darkInput
+    readonly property color popupBg:  _mode === "light" ? _lightPopupBg : _darkPopupBg
+    readonly property color highlight:_mode === "light" ? _lightHighlight : _darkHighlight
+
+    // 设置界面主色（Discord 风格蓝）
+    readonly property color settingsAccent: "#5865F2"
 
     // 字体
     readonly property string fontFamily: "JetBrains Mono, Consolas, monospace"

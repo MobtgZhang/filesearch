@@ -17,10 +17,30 @@ Rectangle {
         anchors.bottomMargin: 12
         spacing: 6
 
-        NavIcon { icon: "🔍"; active: true; tooltip: "搜索" }
-        NavIcon { icon: "◎"; tooltip: "磁盘可视化" }
-        NavIcon { icon: "⧉"; tooltip: "重复文件" }
-        NavIcon { icon: "✦"; tooltip: "清理建议" }
+        NavIcon {
+            icon: "🔍"
+            active: AppController.currentPage === "search"
+            tooltip: "搜索"
+            onClicked: function() { AppController.currentPage = "search" }
+        }
+        NavIcon {
+            icon: "◎"
+            active: AppController.currentPage === "disk"
+            tooltip: "磁盘可视化"
+            onClicked: function() { AppController.currentPage = "disk" }
+        }
+        NavIcon {
+            icon: "⧉"
+            active: AppController.currentPage === "duplicate"
+            tooltip: "重复文件"
+            onClicked: function() { AppController.currentPage = "duplicate" }
+        }
+        NavIcon {
+            icon: "🧹"
+            active: AppController.currentPage === "cleanup"
+            tooltip: "清理文件"
+            onClicked: function() { AppController.currentPage = "cleanup" }
+        }
 
         Rectangle {
             Layout.preferredWidth: 28
@@ -31,8 +51,18 @@ Rectangle {
             color: Theme.border
         }
 
-        NavIcon { icon: "☆"; tooltip: "收藏" }
-        NavIcon { icon: "⟳"; tooltip: "历史" }
+        NavIcon {
+            icon: "☆"
+            active: AppController.currentPage === "favorites"
+            tooltip: "收藏"
+            onClicked: function() { AppController.currentPage = "favorites" }
+        }
+        NavIcon {
+            icon: "⟳"
+            active: AppController.currentPage === "history"
+            tooltip: "历史"
+            onClicked: function() { AppController.currentPage = "history" }
+        }
 
         Item { Layout.fillHeight: true }
 

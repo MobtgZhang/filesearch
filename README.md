@@ -12,7 +12,12 @@ FileSearch/
 │   ├── agent/                     # AI Agent
 │   │   ├── AIBridge
 │   │   ├── ToolExecutor
-│   │   └── ContextBuilder
+│   │   ├── ContextBuilder
+│   │   └── tools/                 # Agent 原子操作工具
+│   │       ├── IAgentTool         # 工具基类接口
+│   │       ├── SearchFilesTool    # 搜索文件
+│   │       ├── DeleteFilesTool    # 删除文件
+│   │       └── MoveFilesTool     # 移动文件
 │   ├── engine/                    # 搜索引擎
 │   │   ├── SearchEngine
 │   │   ├── IndexEngine

@@ -1,2 +1,7 @@
 singleton Theme 1.0 Theme.qml
 singleton AppController 1.0 AppController.qml
+singleton FilelightContext 1.0 FilelightContext.qml
+singleton DuplicateContext 1.0 DuplicateContext.qml
+singleton CleanupContext 1.0 CleanupContext.qml
+singleton ChatHistoryContext 1.0 ChatHistoryContext.qml
+singleton FavoriteSkillsContext 1.0 FavoriteSkillsContext.qml

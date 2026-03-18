@@ -1,18 +1,14 @@
 #include "FileItemModel.h"
+#include <algorithm>
 
 FileItemModel::FileItemModel(QObject *parent)
-    : QAbstractTableModel(parent)
+    : QAbstractListModel(parent)
 {
 }
 
 int FileItemModel::rowCount(const QModelIndex &parent) const
 {
     return parent.isValid() ? 0 : m_files.size();
-}
-
-int FileItemModel::columnCount(const QModelIndex &parent) const
-{
-    return parent.isValid() ? 0 : 5;
 }
 
 QVariant FileItemModel::data(const QModelIndex &index, int role) const
@@ -26,12 +22,13 @@ QVariant FileItemModel::data(const QModelIndex &index, int role) const
     switch (role) {
     case NameRole: return r.name;
     case PathRole: return r.path;
-    case TypeRole: return r.extension.toUpper();
-    case SizeRole: return formatSize(r.size);
+    case TypeRole: return r.isDirectory ? QString("文件夹") : r.extension.toUpper();
+    case SizeRole: return r.isDirectory ? formatSize(r.size) : formatSize(r.size);
     case DateRole: return r.modified.toString("yyyy-MM-dd");
-    case IconRole: return iconForExtension(r.extension);
+    case IconRole: return r.isDirectory ? QString("📁") : iconForExtension(r.extension);
     case SelectedRole: return row.selected;
     case HighlightedRole: return row.highlighted;
+    case IsDirectoryRole: return r.isDirectory;
     default: return QVariant();
     }
 }
@@ -46,7 +43,8 @@ QHash<int, QByteArray> FileItemModel::roleNames() const
         {DateRole, "date"},
         {IconRole, "icon"},
         {SelectedRole, "selected"},
-        {HighlightedRole, "highlighted"}
+        {HighlightedRole, "highlighted"},
+        {IsDirectoryRole, "isDirectory"}
     };
 }
 
@@ -58,6 +56,7 @@ bool FileItemModel::setData(const QModelIndex &index, const QVariant &value, int
     if (role == SelectedRole) {
         m_files[index.row()].selected = value.toBool();
         emit dataChanged(index, index, {SelectedRole});
+        emit selectionChanged();
         return true;
     }
     return false;
@@ -67,6 +66,8 @@ void FileItemModel::setFiles(const QList<UnifiedFileRecord> &files)
 {
     beginResetModel();
     m_files.clear();
+    m_files.reserve(files.size());
+    m_selectionAnchor = -1;
     for (const auto &f : files) {
         m_files.append({f, false, false});
     }
@@ -74,13 +75,93 @@ void FileItemModel::setFiles(const QList<UnifiedFileRecord> &files)
     emit rowCountChanged();
 }
 
+void FileItemModel::selectSingle(int row)
+{
+    if (row < 0 || row >= m_files.size()) return;
+    for (int i = 0; i < m_files.size(); ++i)
+        m_files[i].selected = (i == row);
+    m_selectionAnchor = row;
+    emit dataChanged(index(0), index(m_files.size() - 1), {SelectedRole});
+    emit selectionChanged();
+}
+
+void FileItemModel::selectRange(int fromRow, int toRow)
+{
+    if (m_files.isEmpty()) return;
+    int lo = std::min(fromRow, toRow);
+    int hi = std::max(fromRow, toRow);
+    int last = static_cast<int>(m_files.size()) - 1;
+    lo = std::max(0, std::min(lo, last));
+    hi = std::max(0, std::min(hi, last));
+    for (int i = lo; i <= hi; ++i)
+        m_files[i].selected = true;
+    emit dataChanged(index(lo), index(hi), {SelectedRole});
+    emit selectionChanged();
+}
+
+void FileItemModel::setSelectionAnchor(int row)
+{
+    m_selectionAnchor = (row >= 0 && row < m_files.size()) ? row : -1;
+}
+
+int FileItemModel::selectionAnchor() const
+{
+    return m_selectionAnchor;
+}
+
 void FileItemModel::toggleSelection(int row)
 {
     if (row >= 0 && row < m_files.size()) {
         m_files[row].selected = !m_files[row].selected;
-        QModelIndex idx = index(row, 0);
+        QModelIndex idx = index(row);
         emit dataChanged(idx, idx, {SelectedRole});
+        emit selectionChanged();
     }
+}
+
+int FileItemModel::selectedCount() const
+{
+    int n = 0;
+    for (const auto &row : m_files)
+        if (row.selected) ++n;
+    return n;
+}
+
+qint64 FileItemModel::selectedSize() const
+{
+    qint64 total = 0;
+    for (int i = 0; i < m_files.size(); ++i) {
+        if (m_files[i].selected)
+            total += m_files[i].record.size;
+    }
+    return total;
+}
+
+void FileItemModel::selectAll()
+{
+    if (m_files.isEmpty()) return;
+    for (int i = 0; i < m_files.size(); ++i)
+        m_files[i].selected = true;
+    emit dataChanged(index(0), index(m_files.size() - 1), {SelectedRole});
+    emit selectionChanged();
+}
+
+void FileItemModel::selectNone()
+{
+    if (m_files.isEmpty()) return;
+    for (int i = 0; i < m_files.size(); ++i)
+        m_files[i].selected = false;
+    emit dataChanged(index(0), index(m_files.size() - 1), {SelectedRole});
+    emit selectionChanged();
+}
+
+void FileItemModel::invertSelection()
+{
+    if (m_files.isEmpty()) return;
+    for (int i = 0; i < m_files.size(); ++i)
+        m_files[i].selected = !m_files[i].selected;
+    emit dataChanged(index(0), index(m_files.size() - 1), {SelectedRole});
+    emit selectionChanged();
 }
 
 QList<int> FileItemModel::selectedRows() const

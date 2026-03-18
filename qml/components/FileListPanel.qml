@@ -44,8 +44,26 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
+            focus: true
+            activeFocusOnTab: true
             model: fileModel
             delegate: FileRowDelegate { }
+
+            property bool ctrlHeld: false
+            property bool shiftHeld: false
+            Keys.onPressed: (event) => {
+                if (event.key === Qt.Key_Control || event.key === Qt.Key_Meta)
+                    ctrlHeld = true
+                if (event.key === Qt.Key_Shift)
+                    shiftHeld = true
+            }
+            Keys.onReleased: (event) => {
+                if (event.key === Qt.Key_Control || event.key === Qt.Key_Meta)
+                    ctrlHeld = false
+                if (event.key === Qt.Key_Shift)
+                    shiftHeld = false
+            }
+
             ScrollBar.vertical: ScrollBar {
                 policy: ScrollBar.AsNeeded
                 width: 12
