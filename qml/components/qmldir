@@ -1,0 +1,25 @@
+module components
+TitleBar 1.0 TitleBar.qml
+SearchBar 1.0 SearchBar.qml
+FilterChip 1.0 FilterChip.qml
+Sidebar 1.0 Sidebar.qml
+NavIcon 1.0 NavIcon.qml
+VizPanel 1.0 VizPanel.qml
+VizTab 1.0 VizTab.qml
+RadialMapView 1.0 RadialMapView.qml
+LegendView 1.0 LegendView.qml
+LegendItem 1.0 LegendItem.qml
+TreeMapView 1.0 TreeMapView.qml
+TreeMapCell 1.0 TreeMapCell.qml
+FileListPanel 1.0 FileListPanel.qml
+ColHeader 1.0 ColHeader.qml
+FileRowDelegate 1.0 FileRowDelegate.qml
+ActionBar 1.0 ActionBar.qml
+ActionButton 1.0 ActionButton.qml
+AIChatPanel 1.0 AIChatPanel.qml
+ChatMessage 1.0 ChatMessage.qml
+ToolStatusRow 1.0 ToolStatusRow.qml
+StatusBar 1.0 StatusBar.qml
+StatusItem 1.0 StatusItem.qml
+SettingsDialog 1.0 SettingsDialog.qml
+ThemeModeButton 1.0 ThemeModeButton.qml
