@@ -64,6 +64,13 @@ Rectangle {
         }
 
         StatusItem {
+            text: "找到 "
+            accentText: "23"
+            suffix: " 个结果，共 48.6 GB"
+            Layout.alignment: Qt.AlignVCenter
+        }
+
+        StatusItem {
             text: "磁盘已用 "
             accentText: "847 GB / 1 TB"
             warn: true

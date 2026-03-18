@@ -48,11 +48,12 @@ Rectangle {
             delegate: FileRowDelegate { }
             ScrollBar.vertical: ScrollBar {
                 policy: ScrollBar.AsNeeded
-                width: 4
+                width: 12
                 contentItem: Rectangle {
-                    implicitWidth: 4
-                    radius: 2
-                    color: Theme.border
+                    implicitWidth: 12
+                    radius: 6
+                    color: Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.5)
+                    opacity: 0.8
                 }
             }
         }

@@ -36,17 +36,17 @@ Rectangle {
         spacing: 12
         layoutDirection: Qt.LeftToRight
 
-        Text {
-            text: "⌕"
-            font.pixelSize: 18
-            color: Theme.accent
+        SearchIcon {
+            Layout.preferredWidth: 20
+            Layout.preferredHeight: 20
             Layout.alignment: Qt.AlignVCenter
+            color: Theme.accent
         }
 
-        // 搜索输入框 + 查找按钮
+        // 搜索框：左侧输入 + 右侧当前搜索目录
         Rectangle {
             Layout.fillWidth: true
-            Layout.minimumWidth: 120
+            Layout.minimumWidth: 200
             Layout.preferredHeight: 34
             Layout.alignment: Qt.AlignVCenter
             radius: 8
@@ -58,18 +58,18 @@ Rectangle {
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 12
-                anchors.rightMargin: 4
+                anchors.rightMargin: 12
                 anchors.topMargin: 4
                 anchors.bottomMargin: 4
-                spacing: 8
+                spacing: 0
 
                 TextField {
                     id: searchInput
                     Layout.fillWidth: true
-                    Layout.minimumWidth: 60
+                    Layout.minimumWidth: 80
                     Layout.alignment: Qt.AlignVCenter
                     placeholderText: "输入搜索条件..."
-                    text: "*.mp4  size:>500MB"
+                    text: ""
                     font.family: Theme.fontFamily
                     font.pixelSize: 13
                     color: Theme.bright
@@ -81,38 +81,51 @@ Rectangle {
                     rightPadding: 4
                 }
 
-                Text {
-                    font.family: Theme.fontFamily
-                    font.pixelSize: 11
-                    color: Theme.muted
-                    text: "— 找到 23 个结果，共 48.6 GB"
+                Rectangle {
+                    Layout.preferredWidth: 1
+                    Layout.preferredHeight: 18
+                    Layout.leftMargin: 8
+                    Layout.rightMargin: 8
+                    color: Theme.border
                     Layout.alignment: Qt.AlignVCenter
                 }
 
-                // 查找按钮
-                Rectangle {
-                    Layout.preferredWidth: 72
-                    Layout.preferredHeight: 26
+                TextField {
+                    id: dirField
+                    Layout.preferredWidth: 140
                     Layout.alignment: Qt.AlignVCenter
-                    radius: 6
-                    color: searchBtnMa.containsMouse ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15)
-                    border.color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.4)
-                    border.width: 1
-
-                    Text {
-                        anchors.centerIn: parent
-                        font.pixelSize: 12
-                        font.weight: Font.DemiBold
-                        color: Theme.accent
-                        text: "查找"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 11
+                    color: Theme.muted
+                    background: Item {}
+                    verticalAlignment: TextInput.AlignVCenter
+                    topPadding: 2
+                    bottomPadding: 2
+                    leftPadding: 4
+                    rightPadding: 4
+                    selectByMouse: true
+                    placeholderText: "搜索目录"
+                    onEditingFinished: {
+                        var val = text.trim()
+                        if (val.length > 0) {
+                            dirFilterMenu.customSelection = val
+                            dirFilterMenu.currentIndex = 2
+                        }
                     }
+                }
 
-                    MouseArea {
-                        id: searchBtnMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: { /* 执行搜索 */ }
+                Binding {
+                    target: dirField
+                    property: "text"
+                    value: {
+                        if (dirFilterMenu.customSelection.length > 0)
+                            return dirFilterMenu.customSelection
+                        var idx = dirFilterMenu.currentIndex
+                        if (idx >= 0 && idx < dirFilterMenu.model.length)
+                            return dirFilterMenu.model[idx]
+                        return "全部磁盘"
                     }
+                    when: !dirField.activeFocus
                 }
             }
         }

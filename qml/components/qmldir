@@ -1,5 +1,6 @@
 module components
 TitleBar 1.0 TitleBar.qml
+SearchIcon 1.0 SearchIcon.qml
 SearchBar 1.0 SearchBar.qml
 FilterChip 1.0 FilterChip.qml
 FilterPopMenu 1.0 FilterPopMenu.qml
